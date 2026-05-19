@@ -1,83 +1,56 @@
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, onMounted, onUnmounted, onBeforeMount } from 'vue'
 
-// Primitive values
-const productName = ref('White Bread')
-const price = ref(60)
-const isAvailable = ref(true)
-const quantity = ref(0)
+const products = ref([])
+const isLoading = ref(true)
+const error = ref(null)
 
-// To change a ref in JavaScript, use .value
-function increasePrice() {
-  price.value = price.value + 10
-  // price is now 70, and the template updates automatically
-}
-
-///increasePrice() // Call the function to increase the price on the way to the template
-
-// ref also works with objects and arrays
-const product = ref({
-  name: 'White Bread',
-  price: 60,
-  category: 'bread'
-})
- product.value.price = 70 // Update the price in the product object
-
-// reactive() for objects — no .value needed anywhere
-const ingredient = reactive({
-  name: 'Wheat Flour',
-  currentStock: 50,
-  reorderLevel: 20,
-  unit: 'kg'
+// onMounted: runs AFTER the component is added to the page
+// This is where you fetch data from APIs
+onMounted(async () => {
+  console.log('Component is now on the page!')
+  
+  try {
+    // In Weeks 5-6, this will be a real API call:
+    // const response = await fetch('/api/products')
+    // products.value = await response.json()
+    
+    // For now, simulate a delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    products.value = [
+      { id: 1, name: 'White Bread', price: 60 },
+      { id: 2, name: 'Chocolate Cake', price: 350 },
+    ]
+  } catch (err) {
+    error.value = 'Failed to load products'
+  } finally {
+    isLoading.value = false
+  }
 })
 
-// Modify directly — no .value
-function deductStock(amount) {
-  ingredient.currentStock -= amount
-}
+// onUnmounted: runs when the component is removed from the page
+// Clean up timers, event listeners, etc.
+let intervalId
+onMounted(() => {
+  // Refresh dashboard data every 30 seconds
+  intervalId = setInterval(() => {
+    console.log('Refreshing data...')
+  }, 5000)
+})
 
-// reactive() for arrays
-const products = reactive([
-  { id: 1, name: 'White Bread', price: 60 },
-  { id: 2, name: 'Chocolate Cake', price: 350 },
-])
-
-function addProduct(product) {
-  products.push(product)
-}
-
+onUnmounted(() => {
+  // Clean up the interval when user leaves this page
+  clearInterval(intervalId)
+  console.log('Cleaned up!')
+})
 </script>
 
 <template>
-   
-  <div style="padding: 2rem;">
-  <h1>Vue.js Fundamentals</h1>
-    <p>This is our learning project. We'll build bakery features here.</p>
-
-    <!-- In the template, NO .value needed — Vue unwraps it -->
-    <h2>{{ productName }}</h2>
-    <p>KES {{ price }}</p>
-    <p>Available: {{ isAvailable ? 'Yes' : 'No' }}</p>
-    <button @click="increasePrice">Increase Price</button>
-
-
-      <p>{{ ingredient.name }}: {{ ingredient.currentStock }}{{ ingredient.unit }}</p>
-      <button @click="deductStock(5)">Use 5kg</button>
-
-
-      <H1>Text Interpolation for objects </H1>
-
-       <h1>{{ product.name }}</h1>
-      <p>KES {{ product.price }}</p>
-      
-      <!-- You can use JavaScript expressions inside {{ }} -->
-      <p>{{ product.price * 1.16 }}</p>  <!-- Price with 16% VAT -->
-      <p>{{ product.name.toUpperCase() }}</p>
-      <p>{{ product.price > 100 ? 'Premium' : 'Standard' }}</p>
+  <p v-if="isLoading">Loading products...</p>
+  <p v-else-if="error" class="error">{{ error }}</p>
+  <div v-else>
+    <div v-for="product in products" :key="product.id">
+      {{ product.name }}
+    </div>
   </div>
-
 </template>
-
-<style scoped>
-
-</style>
